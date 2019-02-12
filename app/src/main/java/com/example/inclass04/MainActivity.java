@@ -1,7 +1,6 @@
 package com.example.inclass04;
 
 
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -19,8 +18,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 //Shikha Bhattarai
 //Teena Xiong
@@ -34,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
     String url = null;
     String newurl = null;
     Handler handler;
+    Handler postHandler;
 
     int progressStatus = 0;
 
@@ -60,18 +58,18 @@ public class MainActivity extends AppCompatActivity {
                 handler = new Handler(new Handler.Callback() {
                     @Override
                     public boolean handleMessage(Message message) {
-                        if (message.obj.equals("")) {
-
-                            imageView.setVisibility(View.INVISIBLE);
-                            progressBar.setVisibility(View.VISIBLE);
-                            progressBar.setProgress(progressStatus);
-
-                        } else {
-                            imageView.setVisibility(View.VISIBLE);
-                            progressBar.setVisibility(View.INVISIBLE);
-                            imageView.setImageBitmap((Bitmap) message.obj);
-
-                        }
+                        imageView.setVisibility(View.INVISIBLE);
+                        progressBar.setVisibility(View.VISIBLE);
+                        progressBar.setProgress(message.what);
+                        return false;
+                    }
+                });
+                postHandler = new Handler(new Handler.Callback() {
+                    @Override
+                    public boolean handleMessage(Message message) {
+                        progressBar.setVisibility(View.INVISIBLE);
+                        imageView.setVisibility(View.VISIBLE);
+                        imageView.setImageBitmap((Bitmap) message.obj);
                         return false;
                     }
                 });
@@ -82,19 +80,33 @@ public class MainActivity extends AppCompatActivity {
 
 
     public class ImageUsingThread implements Runnable {
-        String progress = "";
-
         @Override
         public void run() {
-            newurl = "https://cdn.pixabay.com/photo/2017/12/31/06/16/boats-3051610_960_720.jpg";
-            Bitmap newbitmap = getImageBitmap(newurl);
-            Message progMessage = new Message();
-            progMessage.obj = progress;
-            handler.sendMessage(progMessage);
+            while(progressStatus<100){
+                progressStatus++;
+                Message m = new Message();
+                m.what = progressStatus;
+                handler.sendMessage(m);
+                try {
+                    // Sleep for 30 milliseconds.
+                    Thread.sleep(30);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            progressStatus =0;
 
-            Message imageMessage = new Message();
-            imageMessage.obj = newbitmap;
-            handler.sendMessage(imageMessage);
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    newurl = "https://cdn.pixabay.com/photo/2017/12/31/06/16/boats-3051610_960_720.jpg";
+                    Bitmap newbitmap = getImageBitmap(newurl);
+                    Message imageMessage = new Message();
+                    imageMessage.obj = newbitmap;
+                    postHandler.sendMessage(imageMessage);
+                }
+            }).start();
         }
     }
 
