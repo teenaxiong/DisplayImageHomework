@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Display Image</string>
+    <string name="asynctaskbtn">Async Task</string>
+    <string name="threadbtn">Tread</string>
+</resources>
