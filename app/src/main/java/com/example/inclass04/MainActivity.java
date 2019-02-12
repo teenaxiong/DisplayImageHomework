@@ -1,20 +1,18 @@
 package com.example.inclass04;
 
-import android.content.Context;
+
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.Image;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +33,10 @@ public class MainActivity extends AppCompatActivity {
     Button threadbutton;
     String url = null;
     String newurl = null;
-    ExecutorService threadPool;
+    Handler handler;
+
+    int progressStatus = 0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         button = findViewById(R.id.asynctaskbtn);
         imageView = findViewById(R.id.defaultImage);
         progressBar = findViewById(R.id.progressBar);
-        threadPool = Executors.newFixedThreadPool(10);
+        threadbutton = findViewById(R.id.threadbtn);
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -56,18 +57,44 @@ public class MainActivity extends AppCompatActivity {
         threadbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                threadPool.execute(new ImageUsingThread());
+                handler = new Handler(new Handler.Callback() {
+                    @Override
+                    public boolean handleMessage(Message message) {
+                        if (message.obj.equals("")) {
+
+                            imageView.setVisibility(View.INVISIBLE);
+                            progressBar.setVisibility(View.VISIBLE);
+                            progressBar.setProgress(progressStatus);
+
+                        } else {
+                            imageView.setVisibility(View.VISIBLE);
+                            progressBar.setVisibility(View.INVISIBLE);
+                            imageView.setImageBitmap((Bitmap) message.obj);
+
+                        }
+                        return false;
+                    }
+                });
+                new Thread(new ImageUsingThread()).start();
             }
         });
     }
+
+
     public class ImageUsingThread implements Runnable {
+        String progress = "";
+
         @Override
         public void run() {
             newurl = "https://cdn.pixabay.com/photo/2017/12/31/06/16/boats-3051610_960_720.jpg";
             Bitmap newbitmap = getImageBitmap(newurl);
-            imageView.setImageBitmap(newbitmap);
-            imageView.setVisibility(View.VISIBLE);
-              progressBar.setVisibility(View.INVISIBLE);
+            Message progMessage = new Message();
+            progMessage.obj = progress;
+            handler.sendMessage(progMessage);
+
+            Message imageMessage = new Message();
+            imageMessage.obj = newbitmap;
+            handler.sendMessage(imageMessage);
         }
     }
 
@@ -88,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-    public class DownloadImage extends AsyncTask<String, Void, Bitmap> {
+    public class DownloadImage extends AsyncTask<String, Integer, Bitmap> {
 
         @Override
         protected void onPreExecute() {
@@ -99,20 +126,26 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Bitmap doInBackground(String... strings) {
             Bitmap bitmap = getImageBitmap(strings);
+            for (int x = 0; x <= 100; x++) {
+                for (int j = 0; j < 10000000; j++) {
+                }
+                publishProgress(x);
+            }
             return bitmap;
         }
 
         @Override
         protected void onPostExecute(Bitmap bitmap) {
-           imageView.setVisibility(View.VISIBLE);
-           imageView.setImageBitmap(bitmap);
-           progressBar.setVisibility(View.INVISIBLE);
+            imageView.setVisibility(View.VISIBLE);
+            imageView.setImageBitmap(bitmap);
+            progressBar.setVisibility(View.INVISIBLE);
         }
 
-
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            progressBar.setProgress(values[0]);
+        }
     }
 
 
 }
-
-
