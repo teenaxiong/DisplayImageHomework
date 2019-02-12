@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     Button button;
     Button threadbutton;
     String url = null;
+    String newurl = null;
     ExecutorService threadPool;
 
     @Override
@@ -43,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
         button = findViewById(R.id.asynctaskbtn);
         imageView = findViewById(R.id.defaultImage);
         progressBar = findViewById(R.id.progressBar);
+        threadPool = Executors.newFixedThreadPool(10);
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -51,8 +53,23 @@ public class MainActivity extends AppCompatActivity {
                 new DownloadImage().execute(url);
             }
         });
+        threadbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                threadPool.execute(new ImageUsingThread());
+            }
+        });
     }
-
+    public class ImageUsingThread implements Runnable {
+        @Override
+        public void run() {
+            newurl = "https://cdn.pixabay.com/photo/2017/12/31/06/16/boats-3051610_960_720.jpg";
+            Bitmap newbitmap = getImageBitmap(newurl);
+            imageView.setImageBitmap(newbitmap);
+            imageView.setVisibility(View.VISIBLE);
+              progressBar.setVisibility(View.INVISIBLE);
+        }
+    }
 
     public Bitmap getImageBitmap(String... strings) {
         try {
